@@ -2,7 +2,6 @@
   <div id="app">
     <!-- 路由的出口 -->
     <router-view />
-    <h1>移动端项目</h1>
   </div>
 </template>
 
