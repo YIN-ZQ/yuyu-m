@@ -1,7 +1,9 @@
 <template>
   <div class="login-container">
     <!-- 导航栏 -->
-    <van-nav-bar class="page-nav-bar" title="登录" />
+    <van-nav-bar class="page-nav-bar" title="登录" >
+      <van-icon slot="left" name="cross" @click="$router.back()"></van-icon>
+    </van-nav-bar>
     <!-- 导航栏/ -->
 
     <!-- 登录表单 -->
@@ -96,9 +98,11 @@ export default {
       })
       // 3. 提交表单请求登录
       try {
-        const res = await login(user)
-        console.log('登录成功', res)
+        const { data } = await login(user)
+        this.$store.commit('setUser', data.data)
+        console.log('登录成功')
         this.$toast.success('登录成功')
+        this.$router.back()
       } catch (err) {
         if (err.response.status === 400) {
           console.log('手机号或验证码错误')
