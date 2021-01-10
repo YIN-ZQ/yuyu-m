@@ -9,6 +9,7 @@
         round
         icon="search"
         class="search-btn"
+        to="/search"
         >搜索</van-button
       >
     </van-nav-bar>
@@ -56,6 +57,8 @@
 import { getUserChannels } from '@/api/user'
 import ArticeList from './components/artice-list.vue'
 import ChannelEdit from './components/channel-edit'
+import { mapState } from 'vuex'
+import { getItem } from '@/utils/storage'
 
 export default {
   name: 'HomeIndex',
@@ -71,6 +74,9 @@ export default {
       isChennelEditShow: false
     }
   },
+  computed: {
+    ...mapState(['user'])
+  },
   created () {
     this.loadChannels()
   },
@@ -80,9 +86,25 @@ export default {
   methods: {
     async loadChannels () {
       try {
-        const { data } = await getUserChannels()
-        console.log(data)
-        this.channels = data.data.channels
+        // const { data } = await getUserChannels()
+        // this.channels = data.data.channels
+        let channels = []
+        if (this.user) {
+          const { data } = await getUserChannels()
+          channels = data.data.channels
+        } else {
+          // 未登录,判断是否有本地的频道列表数据
+          const localChannels = getItem('TOUTIAO_CHANNELS')
+          // 有,拿来用
+          if (localChannels) {
+            channels = localChannels
+          } else {
+            // 没有,请求获取默认频道列表
+            const { data } = await getUserChannels()
+            channels = data.data.channels
+          }
+        }
+        this.channels = channels
       } catch (err) {
         this.$toast('获取频道数据失败')
       }
