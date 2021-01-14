@@ -30,20 +30,41 @@
           <div slot="label" class="publish-date">
             {{ article.pubdate | relativeTime }}
           </div>
+          <!-- 模板中的$event是事件参数
+          传递:props
+            :is-followed="article.is_followed"
+          修改: 自定义事件
+            @updatae-is_followed="article.is_followed = $event"
+          简写方式: 在组件上使用v-model
+          value = "article.is_followed"
+          @input="article.is_followed = $event"
+           -->
+          <follow-user
+            class="follow-btn"
+            v-model="article.is_followed"
+            :user-id="article.aut_id"
+          ></follow-user>
+          <!-- <van-button
+            v-if="article.is_followed"
+            class="follow-btn"
+            round
+            size="small"
+            :loading="followLoading"
+            @click="onFollow"
+            >已关注</van-button
+          >
           <van-button
+            v-else
             class="follow-btn"
             type="info"
             color="#3296fa"
             round
             size="small"
             icon="plus"
+            :loading="followLoading"
+            @click="onFollow"
             >关注</van-button
-          >
-          <!-- <van-button
-            class="follow-btn"
-            round
-            size="small"
-          >已关注</van-button> -->
+          > -->
         </van-cell>
         <!-- /用户信息 -->
 
@@ -54,6 +75,52 @@
           ref="article-content"
         ></div>
         <van-divider>正文结束</van-divider>
+
+        <!-- 文章评论列表 -->
+        <comment-list
+          :source="article.aut_id"
+          :list="commentList"
+          @onload-success="totalCommentCount = $event.total_count"
+        ></comment-list>
+        <!-- 文章评论列表 -->
+
+        <!-- 底部区域 -->
+        <div class="article-bottom">
+          <van-button
+            class="comment-btn"
+            type="default"
+            round
+            size="small"
+            @click="isPostShow = true"
+            >写评论</van-button
+          >
+          <van-icon name="comment-o" :info="totalCommentCount" color="#777" />
+          <!-- 收藏组件 -->
+          <collect-article
+            style="color: #777"
+            v-model="article.is_collected"
+            :article-id="article.art_id"
+          ></collect-article>
+
+          <!-- 点赞组件 -->
+          <like-article
+            class="btn-item"
+            v-model="article.attitude"
+            :article-id="article.art_id"
+          ></like-article>
+
+          <van-icon name="share" color="#777777"></van-icon>
+        </div>
+        <!-- /底部区域 -->
+
+        <!-- 发布评论 -->
+        <van-popup v-model="isPostShow" position="bottom">
+          <comment-post
+            :target="article.art_id"
+            @post-success="onPostSuccess"
+          ></comment-post>
+        </van-popup>
+        <!-- /发布评论 -->
       </div>
       <!-- /加载完成-文章详情 -->
 
@@ -72,29 +139,27 @@
       </div>
       <!-- /加载失败：其它未知错误（例如网络原因或服务端异常） -->
     </div>
-
-    <!-- 底部区域 -->
-    <div class="article-bottom">
-      <van-button class="comment-btn" type="default" round size="small"
-        >写评论</van-button
-      >
-      <van-icon name="comment-o" info="123" color="#777" />
-      <van-icon color="#777" name="star-o" />
-      <van-icon color="#777" name="good-job-o" />
-      <van-icon name="share" color="#777777"></van-icon>
-    </div>
-    <!-- /底部区域 -->
   </div>
 </template>
 
 <script>
 import { getArticlesById } from '@/api/article'
 import { ImagePreview } from 'vant'
+import FollowUser from '@/components/follow-user'
+import CollectArticle from '@/components/collect-article'
+import LikeArticle from '@/components/like-article'
+import CommentList from './components/comment-list'
+import CommentPost from './components/comment-post'
 
 export default {
   name: 'ArticleIndex',
   components: {
     // [ImagePreview.Component.name]: ImagePreview.Component
+    FollowUser,
+    CollectArticle,
+    LikeArticle,
+    CommentList,
+    CommentPost
   },
   props: {
     articleId: {
@@ -106,7 +171,11 @@ export default {
     return {
       article: {},
       loading: true,
-      errorStatus: 0
+      errorStatus: 0,
+      followLoading: false,
+      totalCommentCount: 0,
+      isPostShow: false,
+      commentList: []
     }
   },
   computed: {},
@@ -147,6 +216,11 @@ export default {
           })
         }
       })
+    },
+    onPostSuccess (data) {
+      this.isPostShow = false
+      // 将发布内容显示到列表顶部
+      this.commentList.unshift(data.new_obj)
     }
   }
 }
